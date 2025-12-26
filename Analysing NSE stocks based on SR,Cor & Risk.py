@@ -1,4 +1,4 @@
-#cor matrix red dotted line vertical bar graph portfolio return 17.09% AVG cor>0.40,SR>1,RISK<25%
+#Analysing NSE Stocks based on AVG cor<0.40,SR>1,RISK<25% with portfolio return 18.23% 
 import yfinance as yf
 import pandas as pd
 import datetime as dt
@@ -9,7 +9,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-# ========== STEP 1: Define Time Periods ==========
+# Define Time Periods 
 end_date = dt.datetime(2025,12,25)
 startdate = end_date - dt.timedelta(days=365*5) 
 
@@ -18,7 +18,7 @@ training_start = startdate
 test_start = training_end
 test_end = end_date
 
-# ========== STEP 2: Download Data ==========
+# Downloading Data
 stocks = ['^NSEI', 'HDFCBANK.NS', 'ICICIBANK.NS', 'SBIN.NS', 'KOTAKBANK.NS',
     'AXISBANK.NS', 'BAJFINANCE.NS', 'BAJAJFINSV.NS', 'HDFCLIFE.NS', 'SBILIFE.NS',
     'TCS.NS', 'INFY.NS', 'HCLTECH.NS', 'WIPRO.NS', 'TECHM.NS', 'LTIM.NS',
@@ -38,7 +38,7 @@ print("\nDownloading Data...")
 df = yf.download(stocks, start=startdate, end=end_date, group_by="ticker", progress=False)
 adj_close_price = df.xs('Close', level=1, axis=1).dropna(axis=1)
 
-# ========== STEP 3: Training Metrics Calculation ==========
+#  Training Metrics Calculation 
 training_prices = adj_close_price[(adj_close_price.index >= training_start) & (adj_close_price.index < training_end)]
 training_returns = training_prices.pct_change().dropna()
 
@@ -46,7 +46,7 @@ annual_returns_training = training_returns.mean() * 252
 annual_volatility_training = training_returns.std() * np.sqrt(252)
 sharpe_ratio_training = annual_returns_training / annual_volatility_training
 
-# ========== STEP 4: Selection Logic with Correlation Filter ==========
+#  Selection Logic with Correlation Filter 
 eligible_by_vol = sharpe_ratio_training[annual_volatility_training <= 0.25]
 top_10_names = eligible_by_vol.nlargest(10).index.tolist()
 
@@ -67,7 +67,7 @@ for i, stock in enumerate(final_portfolio_stocks, 1):
     print(f"{i:2d}. {stock:15s} | Sharpe: {sharpe_ratio_training[stock]:.3f} | Avg Corr: {avg_corr_series[stock]:.3f}")
 print("=" * 70)
 
-# ========== STEP 5: Correlation Visualizations ==========
+#  Correlation Visualizations 
 if final_portfolio_stocks:
     final_corr = training_returns[final_portfolio_stocks].corr()
     final_avg_corr = (final_corr.sum() - 1) / (len(final_portfolio_stocks) - 1)
@@ -96,7 +96,7 @@ if final_portfolio_stocks:
     plt.tight_layout()
     plt.show()
 
-# ========== STEP 6: Backtesting & Terminal Output ==========
+#  Backtesting & Terminal Output 
 test_prices = adj_close_price[(adj_close_price.index >= test_start) & (adj_close_price.index <= test_end)]
 test_returns = test_prices[final_portfolio_stocks].pct_change().dropna()
 test_years = (test_end - test_start).days / 365.25
@@ -122,7 +122,7 @@ print("-" * 90)
 print(f"{'*** TOTAL PORTFOLIO ***':<35} | {port_cagr*100:10.2f}% | {port_vol*100:10.2f}% | {port_sharpe:8.3f}")
 print("=" * 90)
 
-# ========== STEP 7: Performance Visualizations ==========
+#  Performance Visualizations 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7))
 
 ax1.plot(portfolio_cumulative.index, (portfolio_cumulative - 1) * 100, 
@@ -145,4 +145,5 @@ ax2.set_xlabel('CAGR (%)')
 ax2.grid(axis='x', alpha=0.3)
 
 plt.tight_layout()
+
 plt.show()
